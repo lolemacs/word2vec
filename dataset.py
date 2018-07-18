@@ -1,9 +1,9 @@
-import nltk
+from __future__ import print_function
+
+import nltk, os, sys
 from nltk import sent_tokenize, word_tokenize
 from collections import Counter
 from itertools import chain
-import os
-import sys
 
 class Dataset():
     """Class to create a pre-processed dataset from a text file. Given a path
@@ -45,7 +45,7 @@ class Dataset():
         of the i'th sentence of the text at data.path
         
         Arguments:
-            data_path (string): path to the text file containing the textual dataset
+            data_path (string): path to the text file containing the text dataset.
                 it has to be a text file containing plain text, in plain encoding
                 or utf-8.
         """
@@ -71,7 +71,7 @@ class Dataset():
 
 
     def generate_index_sequences(self):
-        """Populates some attributes, including index sequences used for training and:
+        """Populates some attributes, including index sequences used for training, and:
         
             self.word_counts: a (word:count) dictionary where count is the number
                 of occurrences in of word in the text. does not contain words

@@ -1,39 +1,40 @@
-import torch
+from __future__ import print_function
+
 import numpy as np
 
 class Sampler():
     """Class to create a word context sampler from a dataset. This sampler
-    is used to sample word pairs/sets for negative sampling/softmax, when training
+    is used to sample word pairs for negative sampling, when training
     a neural network to learn word embeddings (fixed-dimensional vectors for words).
     
-    The method fetch_minibatch is the only one supposed to be used externally.
+    The method fetch_minibatch() is the only one supposed to be used externally.
 
     Args:
-        data_path (string): path to the text file containing the textual dataset
-            it has to be a text file containing plain text, in plain encoding
-            or utf-8.
+        dataset (Dataset): a Dataset object constructed from a text file.
+        batch_size (int): size of the mini-batch. it is the number of positive pairs
+            to be returned each time fetch_minibatch() is called.
         window_size (int): size of the moving window for the sampler. a window
             composed of 2*window_size+1 words will be moved along sentences of
-            the text and return examples for the neural network (either word 
-            pairs or sets, depending on the chosen mode).
-        min_count (int): minimum number of occurrences for a word to be considered.
-            words that appear less than min_count times in the dataset will be
-            ignored (they will not be considered during the sampling procedure
-            and no embeddings will be learned for them).
+            the text and return examples (word index pairs) for the neural network.
+        negative_rate (int): number of negative pairs to be sampled for each positive
+            pair. if set to 5 (for example), fetch_minibatch() will return 6*batch_size
+            many pairs: batch_size many positive examples and 5*batch_size many negative
+            ones.
 
     Example:
-        >>> sampler = Sampler('softmax', 'data/war_and_peace.txt', 5, 2)
+        >>> dataset = Dataset('data/war_and_peace.txt', 5)
+        >>> sampler = Sampler(dataset, 1000, 2, 5)
+        >>> print(sampler.fetch_minibatch(0))
     """
     
     
-    def __init__(self, dataset, mode, batch_size, window_size=2, negative_rate=1):
+    def __init__(self, dataset, batch_size, window_size=2, negative_rate=1):
         assert batch_size > 0, "Batch size has to be at least 1"
         assert window_size > 0, "Window size has to be at least 1"
         assert negative_rate >= 0, "Negative rate cannot be negative"
         
         self.dataset = dataset
         self.vocab_size = dataset.vocab_size
-        self.mode = mode
         self.window_size = window_size
         self.batch_size = batch_size
         self.negative_rate = negative_rate
@@ -45,13 +46,13 @@ class Sampler():
     def precompute_sampling_probabilities(self):
         """Pre-computes probabilities for negative sampling. In negative sampling,
         we have a parameter 'nr' (negative rate) and we sample nr negative pairs
-        every positive pair: a positive pair is a pair of words that appear close
+        for each positive pair: a positive pair is a pair of words that appear close
         together in the text, while a negative pair is a set of two 'randomly 
         chosen' words.
         
         In traditional negative sampling, we sample a word w with probability 
         p(w) = count(w)/sum_w' count(w'), which is the word's frequency
-        in the text. Here we use a correction technique that consists of computing
+        in the text. Here we use a smoothing technique that consists of computing
         count(w)^3/4 for each word and then normalizing. 
         
         This method pre-computes these probabilities to be used during the 
@@ -90,11 +91,13 @@ class Sampler():
                 # adds (center word, context word) to the list of pairs
                 for context_word in context_window:
                     if context_word != center_word: pairs.append([center_word, context_word])
+                    
         self.pairs = np.asarray(pairs)
+        np.random.shuffle(self.pairs)
 
 
     def fetch_minibatch(self, batch_index):
-        """Fetches a mini batch given by batch_index (0, 1, 2, ..., N/batch_size),
+        """Fetches a mini batch given by batch_index (0, 1, 2, ..., len(self.pairs)/batch_size),
         which includes training pairs along with their labels. For negative sampling,
         this returns (negative_rate+1)*batch_size pairs, which include batch_size
         positive pairs (label 1) and negative_rate*batch_size negative pairs (label 0).
@@ -116,16 +119,14 @@ class Sampler():
         batch_labels = np.zeros(batch_pairs.shape[0], dtype='float32')
         batch_labels[:positive_pairs.shape[0]] = 1
 
-        x = torch.tensor(batch_pairs)
-        y = torch.tensor(batch_labels)
-        return x, y
+        return batch_pairs, batch_labels
 
 
 if __name__ == '__main__':
     from dataset import *
     
     dataset = Dataset('book.txt', 5)
-    sampler = Sampler(dataset, 'softmax', 8, 2)
+    sampler = Sampler(dataset, 8, 2, 1)
     x, y = sampler.fetch_minibatch(0)
-    print(x)
-    print(y)
+    print("Training pairs: ", x)
+    print("Training labels: ", y)
