@@ -12,7 +12,6 @@ class ContrastiveModel(nn.Module):
     contain trainable parameters that are internally updated via
     gradient-descent methods with PyTorch.
     
-
     Args:
         vocabulary_size (int): number of words for which the model learns embeddings.
         emb_size (int): size of the learned embeddings. each nn.Embedding() Module

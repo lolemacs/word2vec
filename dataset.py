@@ -44,7 +44,7 @@ class Dataset():
         words. That is, self.word_sequences[i][j] will be the j'th word (a string)
         of the i'th sentence of the text at data.path
         
-        Arguments:
+        Args:
             data_path (string): path to the text file containing the text dataset.
                 it has to be a text file containing plain text, in plain encoding
                 or utf-8.

@@ -113,10 +113,21 @@ class word2vec():
         of the embedding matrix, so each embedding has unit norm. Then computing angles becomes
         just dot products, which makes is extremely easier to find the top closest words (we can
         use plain matrix multiplications to find angles with all words in the vocabulary).
-        """
-    
-        self.generate_normalized_embs()
         
+        Args:
+            words (list of strings): a list containing the query words. each element in this list
+                should be a string (e.g. 'dog'), for which the method searches for closest words
+                in the embedding space.
+            num_closest (integer): the number of returned words (the closest ones) for each query
+                word in 'words': the method will print the num_closest closest words for each query
+                word.
+        """
+        
+        assert isinstance(words, list), "The 'words' argument must be a list"
+        assert num_closest > 0, "Number of closest words to be printed must be positive"
+
+        self.generate_normalized_embs()
+
         for word in words:
             if word in dataset.word_to_index:
                 word_index = dataset.word_to_index[word]

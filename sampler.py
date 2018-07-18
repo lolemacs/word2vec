@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from dataset import Dataset
 import numpy as np
 
 class Sampler():
@@ -29,6 +30,7 @@ class Sampler():
     
     
     def __init__(self, dataset, batch_size, window_size=2, negative_rate=1):
+        assert isinstance(dataset, Dataset), "dataset must be an object of the Dataset class"
         assert batch_size > 0, "Batch size has to be at least 1"
         assert window_size > 0, "Window size has to be at least 1"
         assert negative_rate >= 0, "Negative rate cannot be negative"
@@ -59,9 +61,9 @@ class Sampler():
         sampling itself, and populates self.sampling_probs.
         """
         
-        assert type(self.dataset.index_counts) == dict, "Dataset does not seem to have a dict attribute dataset.index_counts"
-        indices, index_counts = self.dataset.index_counts.keys(), self.dataset.index_counts.values()
+        assert isinstance(self.dataset.index_counts, dict), "Dataset does not seem to have a dict attribute dataset.index_counts"
         
+        indices, index_counts = self.dataset.index_counts.keys(), self.dataset.index_counts.values()
         self.sampling_indexes = np.array(indices)
         corrected_counts = np.array(index_counts, dtype='float32') ** 0.75
         self.sampling_probs = corrected_counts / corrected_counts.sum()
@@ -101,10 +103,15 @@ class Sampler():
         which includes training pairs along with their labels. For negative sampling,
         this returns (negative_rate+1)*batch_size pairs, which include batch_size
         positive pairs (label 1) and negative_rate*batch_size negative pairs (label 0).
+        
+        Args:
+            batch_index (integer): the mini batch index. this should be an integer
+                between 0 and len(pairs)/batch_size.
         """
     
+        assert batch_index >= 0, "Batch index cannot be negative"
+    
         start, end = batch_index*self.batch_size, (batch_index+1)*self.batch_size
-
         positive_pairs = self.pairs[start:end]
         batch_pairs = positive_pairs
 
